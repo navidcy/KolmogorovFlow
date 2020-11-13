@@ -1,2 +1,3 @@
 # KolmogorovFlow
-Stability of Kolmogorov flow
+
+Study of the stability of Kolmogorov flow.
