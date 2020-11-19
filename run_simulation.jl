@@ -2,7 +2,7 @@
 #
 # A simulation of decaying two-dimensional turbulence.
 
-using FourierFlows, Printf, Random, Plots, JLD2
+using FourierFlows, Printf, Random, JLD2
  
 using Random: seed!
 using FFTW: rfft, irfft
@@ -31,7 +31,7 @@ n, L  = 128, 2π             # grid resolution and domain length
  
   ν = 1e-4
  k₀ = 1
- tfinal = 0.02 / (ν * k₀^2)
+ tfinal = 0.01 / (ν * k₀^2)
  
  nsteps = Int(round(tfinal / dt))
 
@@ -66,21 +66,6 @@ energy_initial = energy(prob)
 U = sqrt(2 * energy_initial)
 
 Re = U * L / ν
-
-
-# Let's plot the initial vorticity field:
-p = heatmap(x, y, vs.zeta',
-         aspectratio = 1,
-              c = :balance,
-           clim = (-2, 2),
-          xlims = (-L/2, L/2),
-          ylims = (-L/2, L/2),
-         xticks = -3:3,
-         yticks = -3:3,
-         xlabel = "x",
-         ylabel = "y",
-          title = "initial vorticity",
-     framestyle = :box)
 
 
 # ## Diagnostics
@@ -130,7 +115,7 @@ filename = FourierFlows.uniquepath(filename)
 @info "Output will be saved at $filename."
 
 filename_diags = FourierFlows.uniquepath(filename_diags)
-@info "Diagnostics will be saved at$filename_diags."
+@info "Diagnostics will be saved at $filename_diags."
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
@@ -141,36 +126,6 @@ if !isdir(plotpath); mkdir(plotpath); end
 get_sol(prob) = sol # extracts the Fourier-transformed solution
 out = Output(prob, filename, (:zetah, get_sol))
 saveproblem(out)
-
-# ## Visualizing the simulation
-
-# We initialize a plot with the vorticity field and the time-series of
-# energy and enstrophy diagnostics.
-
-p1 = heatmap(x, y, vs.zeta',
-         aspectratio = 1,
-                   c = :balance,
-                clim = (-2, 2),
-               xlims = (-L/2, L/2),
-               ylims = (-L/2, L/2),
-              xticks = -3:3,
-              yticks = -3:3,
-              xlabel = "x",
-              ylabel = "y",
-               title = "vorticity, t="*@sprintf("%.2f", cl.t),
-          framestyle = :box)
-
-p2 = plot(4, # this means "a plot with two series"
-               label = ["|u|_{L2}/|ζ|_{L2}(t=0)"  "|ζ|_{L2}/|ζ|_{L2}(t=0)" "|ζ|_{L4}/|ζ|_{L4}(t=0)" "|∇ζ|_{L2}/|∇ζ|_{L2}(t=0)"],
-              legend = :topright,
-           linewidth = 2,
-               alpha = 0.7,
-              xlabel = "ν k₀² t",
-               xlims = (0, 1.01 * ν * k₀^2 * tfinal),
-               ylims = (0, 3))
-
-l = @layout Plots.grid(1, 2)
-p = plot(p1, p2, layout = l, size = (900, 400))
 
 
 # ## Time-stepping the `Problem` forward
@@ -214,4 +169,6 @@ savediagnostic(Z2, "enstrophyL2", filename_diags)
 savediagnostic(Z4, "enstrophyL4", filename_diags)
 savediagnostic(P, "palinstrophy", filename_diags)
 
-@info "Run visualize_simulation.jl after prescribing the two filenames above in the top of the script."
+@info "Run visualize_simulation.jl after prescribing the two filenames used for saving output at the top the visualize_simulation.jl script."
+
+@info "Output for this simulation was saved at $filename and $filename_diags."
