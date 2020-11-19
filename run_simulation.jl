@@ -1,8 +1,5 @@
 # # 2D decaying turbulence
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/twodnavierstokes_decaying.ipynb).
-#
 # A simulation of decaying two-dimensional turbulence.
 
 using FourierFlows, Printf, Random, Plots
@@ -20,18 +17,16 @@ import GeophysicalFlows: peakedisotropicspectrum
 # ## Choosing a device: CPU or GPU
 
 dev = CPU()     # Device (CPU/GPU)
-nothing # hide
 
 
 # ## Numerical, domain, and simulation parameters
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 512, 2π             # grid resolution and domain length
-nothing # hide
+n, L  = 128, 2π             # grid resolution and domain length
 
 ## Then we pick the time-stepper parameters
-    dt = 1e-2  # timestep
+    dt = 5e-2  # timestep
  nsubs = 20    # number of steps between each plot
  
   ν = 1e-4
@@ -39,20 +34,16 @@ nothing # hide
  tfinal = 0.02 / (ν * k₀^2)
  
  nsteps = Int(round(tfinal / dt))
- 
-nothing # hide
 
 
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
 prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, ν=ν, dt=dt, stepper="ETDRK4")
-nothing # hide
 
 # Next we define some shortcuts for convenience.
 sol, cl, vs, gr = prob.sol, prob.clock, prob.vars, prob.grid
 x, y = gr.x, gr.y
-nothing # hide
 
 
 # ## Setting initial conditions
@@ -74,7 +65,6 @@ energy_initial = energy(prob)
 U = sqrt(2*energy_initial)
 Re = U * L / ν
 
-nothing # hide
 
 # Let's plot the initial vorticity field:
 p = heatmap(x, y, vs.zeta',
@@ -123,29 +113,32 @@ Z2 = Diagnostic(enstrophy, prob; nsteps=nsteps)
 Z4 = Diagnostic(vorticityL4, prob; nsteps=nsteps)
 P = Diagnostic(palinstrophy, prob; nsteps=nsteps)
 diags = [E, Z2, Z4, P] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
-nothing # hide
 
 
 # ## Output
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-plotpath = "./plots_decayingTwoDNavierStokes"
+plotpath = "./plots_barotropic_gammaplane"
 plotname = "snapshots"
-filename = joinpath(filepath, "decayingTwoDNavierStokes.jld2")
-nothing # hide
+filename = joinpath(filepath, "kolmogorovflow.jld2")
+filename_diags = joinpath(filepath, "kolmogorovflow_diags.jld2")
+
+filename = FourierFlows.uniquepath(filename)
+@info "Output will be saved at $filename."
+
+filename_diags = FourierFlows.uniquepath(filename_diags)
+@info "Diagnostics will be saved at$filename_diags."
 
 # Do some basic file management
 if isfile(filename); rm(filename); end
+if isfile(filename_diags); rm(filename_diags); end
 if !isdir(plotpath); mkdir(plotpath); end
-nothing # hide
 
 # And then create Output
-get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
-out = Output(prob, filename, (:sol, get_sol))
+get_sol(prob) = sol # extracts the Fourier-transformed solution
+out = Output(prob, filename, (:zetah, get_sol))
 saveproblem(out)
-nothing # hide
-
 
 # ## Visualizing the simulation
 
@@ -174,7 +167,7 @@ p2 = plot(4, # this means "a plot with two series"
                xlims = (0, 1.01 * ν * k₀^2 * tfinal),
                ylims = (0, 3))
 
-l = @layout grid(1, 2)
+l = @layout Plots.grid(1, 2)
 p = plot(p1, p2, layout = l, size = (900, 400))
 
 
@@ -184,27 +177,30 @@ p = plot(p1, p2, layout = l, size = (900, 400))
 
 startwalltime = time()
 
-anim = @animate for j = 0:Int(round(nsteps/nsubs))
+saveoutput(out) # save initial condition
+
+@info "Starting simulation..."
+
+for j=0:Int(nsteps/nsubs)-1
   
   cfl = cl.dt * maximum([maximum(vs.u) / gr.dx, maximum(vs.v) / gr.dy])
   
-  log = @sprintf("step: %04d, t: %d, tν : %.4f, ΔE: %.4f, ΔZ2: %.4f, ΔZ4: %.4f, cfl: %.4f, walltime: %.2f min",
-      cl.step, cl.t, ν*k₀^2*cl.t, E.data[E.i]/E.data[1], Z2.data[Z2.i]/Z2.data[1], Z4.data[Z4.i]/Z4.data[1], cfl, (time()-startwalltime)/60)
-  
-  if j%(1000/nsubs)==0; println(log) end  
-  
-  p[1][1][:z] = vs.zeta'
-  p[1][:title] = "vorticity, ν k₀² t = "*@sprintf("%.2f", ν*k₀^2*cl.t)
-  p[2][:title] = "Re = "*@sprintf("%.2f", Re)
-  push!(p[2][1], ν * k₀^2 * E.t[E.i], (E.data[E.i]/E.data[1])^(1/2))
-  push!(p[2][2], ν * k₀^2 * Z2.t[Z2.i], (Z2.data[Z2.i]/Z2.data[1])^(1/2))
-  push!(p[2][3], ν * k₀^2 * Z4.t[Z4.i], (Z4.data[Z4.i]/Z4.data[1])^(1/4))
-  push!(p[2][4], ν * k₀^2 * P.t[P.i], (P.data[P.i]/P.data[1])^(1/2))
+  if j%(1000/nsubs)==0
+    log = @sprintf("step: %04d, t: %d, tν : %.4f, ΔE: %.4f, ΔZL₂: %.4f, ΔZL₄: %.4f, P: %.4f, cfl: %.4f, walltime: %.2f min",
+      cl.step, cl.t, ν*k₀^2*cl.t, E.data[E.i]/E.data[1], Z2.data[Z2.i]/Z2.data[1], Z4.data[Z4.i]/Z4.data[1], P.data[P.i]/P.data[1], cfl, (time()-startwalltime)/60)
+    println(log)
+  end  
 
   stepforward!(prob, diags, nsubs)
-  TwoDNavierStokes.updatevars!(prob)  
-  
+
+  saveoutput(out)
 end
 
-gif(anim, "kolmogorov.gif", fps=18)
-mp4(anim, "kolmogorov.mp4", fps=18)
+@info @sprintf("Simulation finished after %.2f minutes.", (time()-startwalltime)/60)
+
+savediagnostic(E, "energy", filename_diags)
+savediagnostic(Z2, "enstrophyL2", filename_diags)
+savediagnostic(Z4, "enstrophyL4", filename_diags)
+savediagnostic(P, "palinstrophy", filename_diags)
+
+@info "Run visualize_simulation.jl after prescribing the two filenames above in the top of the script."
