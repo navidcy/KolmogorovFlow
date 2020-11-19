@@ -4,10 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./kolmogorovflow_5.jld2"
-filename_diags = "./kolmogorovflow_diags_3.jld2"
-nsubs = 20
-
+filename = "./kolmogorovflow_10.jld2"
+filename_diags = "./kolmogorovflow_diags_6.jld2"
 
 # ## Visualizing the simulation
 
@@ -67,6 +65,8 @@ nx, ny = file["grid/nx"], file["grid/ny"]
 Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 
 global ν = file["params/ν"]
+global k₀ = file["params/k₀"]
+global nsubs = file["params/nsubs"]
 
 grid = TwoDGrid(nx, Lx, ny, Ly)
 
@@ -76,8 +76,6 @@ iterations = parse.(Int, keys(file["snapshots/t"]))
 final_iteration = iterations[end]
 
 t_final = file["snapshots/t/$final_iteration"]
-
-global k₀ = 1.0
 
 ζ = zeros(nx, ny)
 ψ = zeros(nx, ny)
