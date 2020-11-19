@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./kolmogorovflow_13.jld2"
-filename_diags = "./kolmogorovflow_diags_12.jld2"
+filename = "./kolmogorovflow_5.jld2"
+filename_diags = "./kolmogorovflow_diags_3.jld2"
 nsubs = 20
 
 
@@ -40,7 +40,7 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                 framestyle = :box)
 
     p_diags = plot(4, # this means "a plot with two series"
-                   label = ["|u|₂/|u|₂(t=0)"  "|ζ|₂/|ζ|₂(t=0)" "|ζ|₄/|ζ|₄(t=0)" "|∇ζ|₂/|∇ζ|₂(t=0)"],
+                   label = ["|u|₂ / |u|₂(t=0)"  "|ζ|₂ / |ζ|₂(t=0)" "|ζ|₄ / |ζ|₄(t=0)" "|∇ζ|₂ / |∇ζ|₂(t=0)"],
                   legend = :topright,
                linewidth = 2,
                    alpha = 0.7, 
@@ -104,7 +104,7 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   ldiv!(ψ, grid.rfftplan, ψh)
   
   p[1][1][:z] = ζ'
-  p[1][:title] = "vorticity, tν = "*@sprintf("%.2f", tν)
+  p[1][:title] = "vorticity, tν = "*@sprintf("%.4f", tν)
   p[2][1][:z] = ψ'
   p[2][:title] = "streamfunction"
   p[3][:title] = "Re = "*@sprintf("%.2f", Re)

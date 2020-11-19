@@ -23,11 +23,11 @@ dev = CPU()     # Device (CPU/GPU)
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 128, 2π             # grid resolution and domain length
+n, L  = 256, 2π             # grid resolution and domain length
 
 ## Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
- nsubs = 50    # number of steps between each plot
+ nsubs = 20    # number of steps between each plot
  
   ν = 1e-4
  k₀ = 1
@@ -62,7 +62,9 @@ X, Y = gridpoints(gr)
 TwoDNavierStokes.set_zeta!(prob, ζ₀)
 
 energy_initial = energy(prob)
-U = sqrt(2*energy_initial)
+
+U = sqrt(2 * energy_initial)
+
 Re = U * L / ν
 
 
@@ -85,24 +87,24 @@ p = heatmap(x, y, vs.zeta',
 
 """
     vorticityL4(prob)
-Returns the domain-averaged enstrophy, ∫ ½ ζ⁴ dxdy / (Lx Ly), for the solution in `sol`.
+Returns the domain-averaged enstrophy, ∫ ζ⁴ dxdy / (Lx Ly), for the solution in `sol`.
 """
 @inline function vorticityL4(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   @. vars.zetah = sol
   ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
-  return sum(@. 0.5 * vs.zeta^4) * gr.dx * gr.dy / (gr.Lx * gr.Ly)
+  return sum(@. vs.zeta^4) * gr.dx * gr.dy / (gr.Lx * gr.Ly)
 end
 
 """
     palinstrophy(prob)
-Returns the domain-averaged palinstrophy, ∫ ½ |∇ζ|² dxdy / (Lx Ly), for the solution in `sol`.
+Returns the domain-averaged palinstrophy, ∫ |∇ζ|² dxdy / (Lx Ly), for the solution in `sol`.
 """
 @inline function palinstrophy(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
   palinstrophyh = vars.uh # use vars.uh as scratch variable
 
-  @. palinstrophyh = 1 / 2 * grid.Krsq * abs2(sol)
+  @. palinstrophyh = grid.Krsq * abs2(sol)
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(palinstrophyh, grid)
 end
 
@@ -192,6 +194,7 @@ for j=0:Int(nsteps/nsubs)-1
   end  
 
   stepforward!(prob, diags, nsubs)
+  dealias!(sol, gr)
 
   saveoutput(out)
 end
