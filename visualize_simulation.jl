@@ -7,6 +7,29 @@ using LinearAlgebra: ldiv!
 filename = "./kolmogorovflow_10.jld2"
 filename_diags = "./kolmogorovflow_diags_6.jld2"
 
+withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
+
+"""
+    uniquepath(path)
+
+Returns `path` with a number appended if `isfile(path)`, incremented until `path` does not exist.
+"""
+function uniquegifpath(path)
+  n = 1
+  if isfile(path)
+    path = withoutgif(path) * "_$n.gif"
+  end
+  while isfile(path)
+    n += 1
+    path = withoutgif(path)[1:end-length("_$(n-1)")] * "_$n.gif"
+  end
+  path
+end
+
+moviegif_filename = "./kolmogorov.gif"
+moviegif_filename = uniquegifpath(moviegif_filename)
+moviemp4_filename = moviegif_filename[1:end-4]*".mp4"
+
 # ## Visualizing the simulation
 
 function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
@@ -121,5 +144,5 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   push!(p[3][4], tν, (ΔP)^(1/2))
 end
 
-gif(anim, "kolmogorov.gif", fps=14)
-mp4(anim, "kolmogorov.mp4", fps=14)
+gif(anim, moviegif_filename, fps=14)
+mp4(anim, moviemp4_filename, fps=14)
