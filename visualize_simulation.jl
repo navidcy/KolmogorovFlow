@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./kolmogorovflow_10.jld2"
-filename_diags = "./kolmogorovflow_diags_9.jld2"
+filename = "./kolmogorovflow_13.jld2"
+filename_diags = "./kolmogorovflow_diags_12.jld2"
 nsubs = 20
 
 
@@ -66,7 +66,7 @@ file = jldopen(filename)
 nx, ny = file["grid/nx"], file["grid/ny"]
 Lx, Ly = file["grid/Lx"], file["grid/Ly"]
 
-ν = file["params/ν"]
+global ν = file["params/ν"]
 
 grid = TwoDGrid(nx, Lx, ny, Ly)
 
@@ -77,7 +77,7 @@ final_iteration = iterations[end]
 
 t_final = file["snapshots/t/$final_iteration"]
 
-k₀ = 1.0
+global k₀ = 1.0
 
 ζ = zeros(nx, ny)
 ψ = zeros(nx, ny)
@@ -110,16 +110,17 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   p[3][:title] = "Re = "*@sprintf("%.2f", Re)
   
   t = diags["diags/energy/t"][(i-1)*nsubs+1]
+  tν = ν * k₀^2 * t
   
   ΔE = diags["diags/energy/data"][(i-1)*nsubs+1] / diags["diags/energy/data"][1]
   ΔΖ₂ = diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1]
   ΔΖ₄ = diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1]
   ΔP = diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1]
   
-  push!(p[3][1], ν * k₀^2 * t, (ΔE)^(1/2))
-  push!(p[3][2], ν * k₀^2 * t, (ΔΖ₂)^(1/2))
-  push!(p[3][3], ν * k₀^2 * t, (ΔΖ₄)^(1/4))
-  push!(p[3][4], ν * k₀^2 * t, (ΔP)^(1/2))
+  push!(p[3][1], tν, (ΔE)^(1/2))
+  push!(p[3][2], tν, (ΔΖ₂)^(1/2))
+  push!(p[3][3], tν, (ΔΖ₄)^(1/4))
+  push!(p[3][4], tν, (ΔP)^(1/2))
 end
 
 gif(anim, "kolmogorov.gif", fps=14)
