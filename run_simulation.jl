@@ -120,8 +120,6 @@ diags = [E, Z2, Z4, P, psixy00] # A list of Diagnostics types passed to "stepfor
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-plotpath = "./plots_barotropic_gammaplane"
-plotname = "snapshots"
 filename = joinpath(filepath, "kolmogorovflow.jld2")
 filename_diags = joinpath(filepath, "kolmogorovflow_diags.jld2")
 
@@ -134,7 +132,6 @@ filename_diags = FourierFlows.uniquepath(filename_diags)
 # Do some basic file management
 if isfile(filename); rm(filename); end
 if isfile(filename_diags); rm(filename_diags); end
-if !isdir(plotpath); mkdir(plotpath); end
 
 # And then create Output
 get_sol(prob) = sol # extracts the Fourier-transformed solution
