@@ -93,13 +93,27 @@ Returns the domain-averaged palinstrophy, ∫ |∇ζ|² dxdy / (Lx Ly), for the 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(palinstrophyh, grid)
 end
 
+"""
+    ∂²ψ_xy00(prob)
+Returns the value of ∂²ψ/∂x∂y at (x, y)=(0, 0).
+"""
+@inline function ∂²ψ_xy00(prob)
+  sol, vars, grid = prob.sol, prob.vars, prob.grid
+  ψh = vars.uh  # use vars.uh as scratch variable
+  ψ = vars.u    # use vars.u as scratch variable
+  ldiv!(ψ, grid.rfftplan, ψh)
+  
+  return ψ[Int(grid.nx/2), Int(grid.ny/2)]
+end
+
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z2 = Diagnostic(enstrophy, prob; nsteps=nsteps)
 Z4 = Diagnostic(vorticityL4, prob; nsteps=nsteps)
 P = Diagnostic(palinstrophy, prob; nsteps=nsteps)
-diags = [E, Z2, Z4, P] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+psixy00 = Diagnostic(∂²ψ_xy00, prob; nsteps=nsteps)
+diags = [E, Z2, Z4, P, psixy00] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 
 
 # ## Output
@@ -168,6 +182,7 @@ savediagnostic(E, "energy", filename_diags)
 savediagnostic(Z2, "enstrophyL2", filename_diags)
 savediagnostic(Z4, "enstrophyL4", filename_diags)
 savediagnostic(P, "palinstrophy", filename_diags)
+savediagnostic(psixy00, "psixy00", filename_diags)
 
 @info "Run visualize_simulation.jl after prescribing the two filenames used for saving output at the top the visualize_simulation.jl script."
 
