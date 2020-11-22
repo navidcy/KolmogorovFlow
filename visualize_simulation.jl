@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./kolmogorovflow_10.jld2"
-filename_diags = "./kolmogorovflow_diags_6.jld2"
+filename = "././kolmogorovflow.jld2"
+filename_diags = "./kolmogorovflow_diags.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
@@ -60,21 +60,45 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                      title = "streamfunction",
                 framestyle = :box)
 
-    p_diags = plot(6, # this means "a plot with two series"
-                   label = ["|u|₂ / |u|₂(t=0)"  "|ζ|₂ / |ζ|₂(t=0)" "|ζ|₄ / |ζ|₄(t=0)" "|∇ζ|₂ / |∇ζ|₂(t=0)", "log P", "ψ_xy(0, 0)"],
+    p_diags1 = plot(4, # this means "a plot with two series"
+                   label = ["|u|₂ / |u|₂(t=0)"  "|ζ|₂ / |ζ|₂(t=0)" "|ζ|₄ / |ζ|₄(t=0)" "|∇ζ|₂ / |∇ζ|₂(t=0)"],
                   legend = :topright,
                linewidth = 2,
                    alpha = 0.7, 
                   xlabel = "ν k₀² t",
                    xlims = (0, 1.01 * ν * k₀^2 * t_final),
                    # ylims = (0, 3),
-                  yscale = :log10,
+                  yscale = :log10
+                   )
+                   
+    p_diags2 = plot(1, # this means "a plot with two series"
+                   label = "log(log(P/P(t=0)))",
+                  legend = :topright,
+               linewidth = 2,
+                   alpha = 0.7, 
+                  xlabel = "ν k₀² t",
+                   xlims = (0, 1.01 * ν * k₀^2 * t_final),
+                   # yscale = :log10,
+                   # ylims = (0, 3),
+                   )
+
+    p_diags3 = plot(1, # this means "a plot with two series"
+                   label = "∂²ψ/∂x∂y(0, 0)",
+                  legend = :topright,
+               linewidth = 2,
+                   alpha = 0.7, 
+                  xlabel = "ν k₀² t",
+                   xlims = (0, 1.01 * ν * k₀^2 * t_final),
+                   # yscale = :log10,
+                   # ylims = (0, 3),
                    )
 
     l = @layout [ Plots.grid(1, 2)
-                  c{0.4h} ]
+                  c{0.15h}
+                  d{0.15h}
+                  e{0.15h} ]
              
-    p = plot(p_ζ, p_ψ, p_diags, layout = l, size = (900, 700))
+    p = plot(p_ζ, p_ψ, p_diags1, p_diags2, p_diags3, layout = l, size = (900, 1000))
 
     return p
 end
@@ -135,20 +159,28 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   t = diags["diags/energy/t"][(i-1)*nsubs+1]
   tν = ν * k₀^2 * t
   
-  ΔE = diags["diags/energy/data"][(i-1)*nsubs+1] / diags["diags/energy/data"][1]
-  ΔΖ₂ = diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1]
-  ΔΖ₄ = diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1]
-  ΔP = diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1]
-  logΔP = log.(sqrt.(diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1]))
+  ΔE  = (diags["diags/energy/data"][(i-1)*nsubs+1] / diags["diags/energy/data"][1])^(1/2)
+  ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1])^(1/2)
+  ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1])^(1/4)
+  ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1])^(1/2)
   psixy00 = diags["diags/psixy00/data"][(i-1)*nsubs+1]
   
-  push!(p[3][1], tν, (ΔE)^(1/2))
-  push!(p[3][2], tν, (ΔΖ₂)^(1/2))
-  push!(p[3][3], tν, (ΔΖ₄)^(1/4))
-  push!(p[3][4], tν, (ΔP)^(1/2))
-  push!(p[3][5], tν, logΔP)
-  push!(p[3][6], tν, psixy00)
+  push!(p[3][1], tν, (ΔE))
+  push!(p[3][2], tν, (ΔΖ₂))
+  push!(p[3][3], tν, (ΔΖ₄))
+  push!(p[3][4], tν, (ΔP))
+  # push!(p[4][1], tν, log(log(ΔP)))
+  push!(p[5][1], tν, psixy00)
 end
 
 gif(anim, moviegif_filename, fps=14)
 mp4(anim, moviemp4_filename, fps=14)
+
+# time = diags["diags/energy/t"]
+# E  = (diags["diags/energy/data"]).^(1/2)
+# Ζ₂ = (diags["diags/enstrophyL2/data"]).^(1/2)
+# Ζ₄ = (diags["diags/enstrophyL4/data"]).^(1/4)
+# P  = (diags["diags/palinstrophy/data"]).^(1/2)
+# psixy00 = diags["diags/psixy00/data"]
+# 
+# plot(time, P)

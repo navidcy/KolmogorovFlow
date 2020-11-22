@@ -154,17 +154,21 @@ close(file)
 
 @info "Starting simulation..."
 
-for j=0:Int(nsteps/nsubs)-1
+for j=0:Int(round(nsteps/nsubs))-1
   
-  cfl = cl.dt * maximum([maximum(vs.u) / gr.dx, maximum(vs.v) / gr.dy])
+  
   
   if j%(1000/nsubs)==0
+    TwoDNavierStokes.updatevars!(prob)
+    
+    cfl = cl.dt * maximum([maximum(vs.u) / gr.dx, maximum(vs.v) / gr.dy])
+    
     log = @sprintf("step: %04d, t: %d, tν : %.4f, ΔE: %.4f, ΔZL₂: %.4f, ΔZL₄: %.4f, P: %.4f, cfl: %.4f, walltime: %.2f min",
       cl.step, cl.t, ν*k₀^2*cl.t, E.data[E.i]/E.data[1], Z2.data[Z2.i]/Z2.data[1], Z4.data[Z4.i]/Z4.data[1], P.data[P.i]/P.data[1], cfl, (time()-startwalltime)/60)
     estimated_remaining_walltime = (time()-startwalltime)/60 / cl.step * (nsteps-cl.step)
         log = @sprintf("step: %04d, t: %d, tν : %.4f, ΔE: %.4f, ΔZL₂: %.4f, ΔZL₄: %.4f, P: %.4f, cfl: %.4f, walltime: %.2f min, estimated remaining walltime: %.2f min",
           cl.step, cl.t, ν*k₀^2*cl.t, E.data[E.i]/E.data[1], Z2.data[Z2.i]/Z2.data[1], Z4.data[Z4.i]/Z4.data[1], P.data[P.i]/P.data[1], cfl, (time()-startwalltime)/60, estimated_remaining_walltime)
-        println(log)
+    println(log)
   end  
 
   stepforward!(prob, diags, nsubs)
