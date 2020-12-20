@@ -57,7 +57,8 @@ E₀ = 0.00025 # energy of sin(y) is 0.25
 ζ_perturbation = peakedisotropicspectrum(gr, k₀, E₀)
 X, Y = gridpoints(gr)
 # ζ₀ = @. sin(Y) + ζ_perturbation
-ζ₀ = @. sin(X) * sin(Y) + 0.005 * cos(X)
+#ζ₀ = @. sin(X) * sin(Y) + 0.005 * cos(X)
+ζ₀ = @. sin(X) * sin(Y) + 0.05 * (cos(8*X)+cos(8*Y))
 
 TwoDNavierStokes.set_zeta!(prob, ζ₀)
 
@@ -120,8 +121,8 @@ diags = [E, Z2, Z4, P, psixy00] # A list of Diagnostics types passed to "stepfor
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
 filepath = "."
-filename = joinpath(filepath, "kolmogorovflow.jld2")
-filename_diags = joinpath(filepath, "kolmogorovflow_diags.jld2")
+filename = joinpath(filepath, "data/kolmogorovflow.jld2")
+filename_diags = joinpath(filepath, "data/kolmogorovflow_diags.jld2")
 
 filename = FourierFlows.uniquepath(filename)
 @info "Output will be saved at $filename."

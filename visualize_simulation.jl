@@ -38,7 +38,7 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
     p_ζ = heatmap(x, y, ζ',
              aspectratio = 1,
                        c = :balance,
-                    clim = (-2, 2),
+                    #clim = (-2, 2),
                    xlims = (x[1], x[end]),
                    ylims = (y[1], y[end]),
                   xticks = -3:3,
@@ -71,8 +71,8 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                   yscale = :log10
                    )
                    
-    p_diags2 = plot(1, # this means "a plot with two series"
-                   label = "∂²ψ/∂x∂y(0, 0)",
+    p_diags2 = plot(2, # this means "a plot with two series"
+                   label = ["∂²ψ/∂x∂y(0, 0)" "(∂²/∂x²-∂²/∂y²)ψ(0, 0)"],
                   legend = :topright,
                linewidth = 2,
                    alpha = 0.7, 
@@ -135,6 +135,20 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   ζh = file["snapshots/zetah/$iteration"]
   
   @. ψh = - grid.invKrsq * ζh
+  
+  hypeh = @. (grid.kr^2 - grid.l^2) * ψh
+  hype = zeros(grid.nx, grid.ny)
+  ldiv!(hype, grid.rfftplan, hypeh)
+  
+  hype00 = hype[Int(grid.nx/2), Int(grid.ny/2)]
+
+
+  crossh = @. (grid.kr * grid.l) * ψh
+  cross = zeros(grid.nx, grid.ny)
+  ldiv!(cross, grid.rfftplan, crossh)
+  
+  cross00 = cross[Int(grid.nx/2), Int(grid.ny/2)]
+  
   ldiv!(ζ, grid.rfftplan, ζh)
   ldiv!(ψ, grid.rfftplan, ψh)
   
@@ -151,13 +165,13 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1])^(1/2)
   ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1])^(1/4)
   ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1])^(1/2)
-  local psixy00 = diags["diags/psixy00/data"][(i-1)*nsubs+1]
   
   push!(p[3][1], tν, (ΔE))
   push!(p[3][2], tν, (ΔΖ₂))
   push!(p[3][3], tν, (ΔΖ₄))
   push!(p[3][4], tν, (ΔP))
-  push!(p[4][1], tν, psixy00)
+  push!(p[4][1], tν, cross00)
+  push!(p[4][2], tν, hype00)
 end
 
 gif(anim, moviegif_filename, fps=14)
