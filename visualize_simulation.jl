@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./kolmogorovflow_1.jld2"
-filename_diags = "./kolmogorovflow_diags_1.jld2"
+filename = "./data/kolmogorovflow.jld2"
+filename_diags = "./data/kolmogorovflow_diags.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
@@ -26,7 +26,7 @@ function uniquegifpath(path)
   path
 end
 
-moviegif_filename = "./kolmogorov.gif"
+moviegif_filename = "./movies/kolmogorov.gif"
 moviegif_filename = uniquegifpath(moviegif_filename)
 moviemp4_filename = moviegif_filename[1:end-4]*".mp4"
 
@@ -72,17 +72,6 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                    )
                    
     p_diags2 = plot(1, # this means "a plot with two series"
-                   label = "log(log(P/P(t=0)))",
-                  legend = :topright,
-               linewidth = 2,
-                   alpha = 0.7, 
-                  xlabel = "ν k₀² t",
-                   xlims = (0, 1.01 * ν * k₀^2 * t_final),
-                   # yscale = :log10,
-                   # ylims = (0, 3),
-                   )
-
-    p_diags3 = plot(1, # this means "a plot with two series"
                    label = "∂²ψ/∂x∂y(0, 0)",
                   legend = :topright,
                linewidth = 2,
@@ -94,11 +83,10 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                    )
 
     l = @layout [ Plots.grid(1, 2)
-                  c{0.15h}
-                  d{0.15h}
-                  e{0.15h} ]
+                  c{0.25h}
+                  d{0.25h} ]
              
-    p = plot(p_ζ, p_ψ, p_diags1, p_diags2, p_diags3, layout = l, size = (900, 1000))
+    p = plot(p_ζ, p_ψ, p_diags1, p_diags2, layout = l, size = (900, 1000))
 
     return p
 end
@@ -169,8 +157,7 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   push!(p[3][2], tν, (ΔΖ₂))
   push!(p[3][3], tν, (ΔΖ₄))
   push!(p[3][4], tν, (ΔP))
-  # push!(p[4][1], tν, log(log(ΔP)))
-  push!(p[5][1], tν, psixy00)
+  push!(p[4][1], tν, psixy00)
 end
 
 gif(anim, moviegif_filename, fps=14)
