@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "././kolmogorovflow.jld2"
-filename_diags = "./kolmogorovflow_diags.jld2"
+filename = "./kolmogorovflow_1.jld2"
+filename_diags = "./kolmogorovflow_diags_1.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
@@ -163,7 +163,7 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1])^(1/2)
   ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1])^(1/4)
   ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1])^(1/2)
-  psixy00 = diags["diags/psixy00/data"][(i-1)*nsubs+1]
+  local psixy00 = diags["diags/psixy00/data"][(i-1)*nsubs+1]
   
   push!(p[3][1], tν, (ΔE))
   push!(p[3][2], tν, (ΔΖ₂))
