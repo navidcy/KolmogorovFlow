@@ -23,15 +23,15 @@ dev = CPU()     # Device (CPU/GPU)
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 128, 2π             # grid resolution and domain length
+n, L  = 256, 2π             # grid resolution and domain length
 
 ## Then we pick the time-stepper parameters
-    dt = 2e-2  # timestep
+    dt = 1e-2  # timestep
  nsubs = 50    # number of steps between each plot
  
   ν = 1e-4
  k₀ = 1
- tfinal = 0.01 / (ν * k₀^2)
+ tfinal = 0.005 / (ν * k₀^2)
  nsteps = Int(round(tfinal / dt))
 
 

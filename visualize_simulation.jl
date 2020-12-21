@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./data/kolmogorovflow_1.jld2"
-filename_diags = "./data/kolmogorovflow_diags_1.jld2"
+filename = "./data/kolmogorovflow.jld2"
+filename_diags = "./data/kolmogorovflow_diags.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
@@ -23,7 +23,8 @@ function uniquegifpath(path)
     n += 1
     path = withoutgif(path)[1:end-length("_$(n-1)")] * "_$n.gif"
   end
-  path
+  
+  return path
 end
 
 moviegif_filename = "./movies/kolmogorov.gif"
@@ -138,7 +139,7 @@ global total_iterations = length(iterations)
 
 startwalltime = time()
 
-anim = @animate for (i, iteration) in enumerate(iterations)
+anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   
   if i%25 == 0
     estimated_remaining_walltime = (time()-startwalltime)/60 / i * (total_iterations - i)
@@ -171,30 +172,22 @@ anim = @animate for (i, iteration) in enumerate(iterations)
   p[2][:title] = "streamfunction"
   p[3][:title] = "Re = " * @sprintf("%.2f", Re)
   
-  t = diags["diags/energy/t"][(i-1)*nsubs+1]
-  tν = ν * k₀^2 * t
+  t_diags = diags["diags/energy/t"][(i-1)*nsubs+1:i*nsubs]
+  t_diags = diags["diags/energy/t"][(i-1)*nsubs+1:i*nsubs]
+  tν_diags = ν * k₀^2 * t_diags
   
-  ΔE  = (diags["diags/energy/data"][(i-1)*nsubs+1] / diags["diags/energy/data"][1])^(1/2)
-  ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL2/data"][1])^(1/2)
-  ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1] / diags["diags/enstrophyL4/data"][1])^(1/4)
-  ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1] / diags["diags/palinstrophy/data"][1])^(1/2)
+  ΔE  = (diags["diags/energy/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/energy/data"][1]).^(1/2)
+  ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/enstrophyL2/data"][1]).^(1/2)
+  ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/enstrophyL4/data"][1]).^(1/4)
+  ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/palinstrophy/data"][1]).^(1/2)
   
-  push!(p[3][1], tν, (ΔE))
-  push!(p[3][2], tν, (ΔΖ₂))
-  push!(p[3][3], tν, (ΔΖ₄))
-  push!(p[3][4], tν, (ΔP))
+  push!(p[3][1], tν_diags, ΔE)
+  push!(p[3][2], tν_diags, ΔΖ₂)
+  push!(p[3][3], tν_diags, ΔΖ₄)
+  push!(p[3][4], tν_diags, ΔP)
   push!(p[4][1], tν, cross00)
   push!(p[4][2], tν, hype00)
 end
 
 gif(anim, moviegif_filename, fps=14)
 mp4(anim, moviemp4_filename, fps=14)
-
-# time = diags["diags/energy/t"]
-# E  = (diags["diags/energy/data"]).^(1/2)
-# Ζ₂ = (diags["diags/enstrophyL2/data"]).^(1/2)
-# Ζ₄ = (diags["diags/enstrophyL4/data"]).^(1/4)
-# P  = (diags["diags/palinstrophy/data"]).^(1/2)
-# psixy00 = diags["diags/psixy00/data"]
-# 
-# plot(time, P)
