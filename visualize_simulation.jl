@@ -4,8 +4,8 @@ using Plots
 using Printf
 using LinearAlgebra: ldiv!
 
-filename = "./data/kolmogorovflow.jld2"
-filename_diags = "./data/kolmogorovflow_diags.jld2"
+filename = "./data/kolmogorovflow_1.jld2"
+filename_diags = "./data/kolmogorovflow_diags_1.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
@@ -112,13 +112,19 @@ x, y = grid.x, grid.y
 iterations = parse.(Int, keys(file["snapshots/t"]))
 final_iteration = iterations[end]
 
+ζh_initial = file["snapshots/zetah/0"]
 t_final = file["snapshots/t/$final_iteration"]
 
-ζ = zeros(nx, ny)
-ψ = zeros(nx, ny)
+global ζ = zeros(nx, ny)
+global ψ = zeros(nx, ny)
+
+ζh = zeros(Complex{Float64}, (grid.nkr, grid.nl))
 ψh = zeros(Complex{Float64}, (grid.nkr, grid.nl))
 
-ζh_initial = file["snapshots/zetah/0"]
+@. ζh = ζh_initial
+ldiv!(ζ, grid.rfftplan, ζh)
+@. ψh = @. -grid.invKrsq * ζh
+ldiv!(ψ, grid.rfftplan, ψh)
 
 energyh = @. 1 / 2 * grid.invKrsq * abs2(ζh_initial)
 energy_initial = 1 / (grid.Lx * grid.Ly) * FourierFlows.parsevalsum(energyh, grid)
@@ -128,35 +134,42 @@ global Re = U * grid.Lx / ν
 
 global p = plot_output(x, y, ζ, ψ, 0.0, k₀, ν, t_final)
 
+global total_iterations = length(iterations)
+
+startwalltime = time()
+
 anim = @animate for (i, iteration) in enumerate(iterations)
-  t = file["snapshots/t/$iteration"]
-  tν = ν * k₀^2 * t
   
-  ζh = file["snapshots/zetah/$iteration"]
+  if i%25 == 0
+    estimated_remaining_walltime = (time()-startwalltime)/60 / i * (total_iterations - i)
+    log = @sprintf("estimated remaining walltime: %.2f min", estimated_remaining_walltime)
+    println(log)
+  end
   
-  @. ψh = - grid.invKrsq * ζh
+  local t = file["snapshots/t/$iteration"]
+  local tν = ν * k₀^2 * t
+  
+  local ζh = file["snapshots/zetah/$iteration"] 
+  ldiv!(ζ, grid.rfftplan, ζh)
+  
+  @. ψh = -grid.invKrsq * ζh
+  ldiv!(ψ, grid.rfftplan, ψh)
   
   hypeh = @. (grid.kr^2 - grid.l^2) * ψh
   hype = zeros(grid.nx, grid.ny)
-  ldiv!(hype, grid.rfftplan, hypeh)
-  
+  ldiv!(hype, grid.rfftplan, hypeh)  
   hype00 = hype[Int(grid.nx/2), Int(grid.ny/2)]
 
-
-  crossh = @. (grid.kr * grid.l) * ψh
+  crossh = @. grid.kr * grid.l * ψh
   cross = zeros(grid.nx, grid.ny)
   ldiv!(cross, grid.rfftplan, crossh)
-  
   cross00 = cross[Int(grid.nx/2), Int(grid.ny/2)]
   
-  ldiv!(ζ, grid.rfftplan, ζh)
-  ldiv!(ψ, grid.rfftplan, ψh)
-  
   p[1][1][:z] = ζ'
-  p[1][:title] = "vorticity, tν = "*@sprintf("%.4f", tν)
+  p[1][:title] = "vorticity, tν = " * @sprintf("%.4f", tν)
   p[2][1][:z] = ψ'
   p[2][:title] = "streamfunction"
-  p[3][:title] = "Re = "*@sprintf("%.2f", Re)
+  p[3][:title] = "Re = " * @sprintf("%.2f", Re)
   
   t = diags["diags/energy/t"][(i-1)*nsubs+1]
   tν = ν * k₀^2 * t
