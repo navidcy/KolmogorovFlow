@@ -1,41 +1,3 @@
-# # 2D decaying turbulence
-#
-# A simulation of decaying two-dimensional turbulence.
-
-using FourierFlows, Printf, Random, JLD2
- 
-using Random: seed!
-using FFTW: rfft, irfft
-using LinearAlgebra: ldiv!
-using FourierFlows: parsevalsum
-
-import GeophysicalFlows.TwoDNavierStokes
-import GeophysicalFlows.TwoDNavierStokes: energy, enstrophy
-import GeophysicalFlows: peakedisotropicspectrum
-
-
-# ## Choosing a device: CPU or GPU
-
-dev = CPU()     # Device (CPU/GPU)
-
-
-# ## Numerical, domain, and simulation parameters
-#
-# First, we pick some numerical and physical parameters for our model.
-
-n, L  = 128, 2π             # grid resolution and domain length
-
-## Then we pick the time-stepper parameters
-    dt = 2e-2  # timestep
- nsubs = 50    # number of steps between each plot
- 
-  ν = 1e-4
- k₀ = 1
- tfinal = 0.01 / (ν * k₀^2)
- 
- nsteps = Int(round(tfinal / dt))
-
-
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
@@ -54,11 +16,11 @@ seed!(1234)
 E₀ = 0.00025 # energy of sin(y) is 0.25
 
 # ζ_perturbation = peakedisotropicspectrum(gr, k₀, E₀, mask=prob.timestepper.filter)
-ζ_perturbation = peakedisotropicspectrum(gr, k₀, E₀)
+# ζ_perturbation = peakedisotropicspectrum(gr, k₀, E₀)
+#ζ₀ = @. sin(Y) + ζ_perturbation
+
 X, Y = gridpoints(gr)
-# ζ₀ = @. sin(Y) + ζ_perturbation
-#ζ₀ = @. sin(X) * sin(Y) + 0.005 * cos(X)
-ζ₀ = @. sin(X) * sin(Y) + 0.05 * (cos(8*X)+cos(8*Y))
+ζ₀ = @. initial_vorticity(X, Y) 
 
 TwoDNavierStokes.set_zeta!(prob, ζ₀)
 
@@ -94,35 +56,21 @@ Returns the domain-averaged palinstrophy, ∫ |∇ζ|² dxdy / (Lx Ly), for the 
   return 1 / (grid.Lx * grid.Ly) * parsevalsum(palinstrophyh, grid)
 end
 
-"""
-    ∂²ψ_xy00(prob)
-Returns the value of ∂²ψ/∂x∂y at (x, y)=(0, 0).
-"""
-@inline function ∂²ψ_xy00(prob)
-  sol, vars, grid = prob.sol, prob.vars, prob.grid
-  ψh = vars.uh  # use vars.uh as scratch variable
-  ψ = vars.u    # use vars.u as scratch variable
-  ldiv!(ψ, grid.rfftplan, ψh)
-  
-  return ψ[Int(grid.nx/2), Int(grid.ny/2)]
-end
-
 
 # Create Diagnostics -- `energy` and `enstrophy` functions are imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z2 = Diagnostic(enstrophy, prob; nsteps=nsteps)
 Z4 = Diagnostic(vorticityL4, prob; nsteps=nsteps)
 P = Diagnostic(palinstrophy, prob; nsteps=nsteps)
-psixy00 = Diagnostic(∂²ψ_xy00, prob; nsteps=nsteps)
-diags = [E, Z2, Z4, P, psixy00] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
+diags = [E, Z2, Z4, P] # A list of Diagnostics types passed to "stepforward!" will  be updated every timestep.
 
 
 # ## Output
 
 # We choose folder for outputing `.jld2` files and snapshots (`.png` files).
-filepath = "."
-filename = joinpath(filepath, "data/kolmogorovflow.jld2")
-filename_diags = joinpath(filepath, "data/kolmogorovflow_diags.jld2")
+filepath = "./data/"
+filename = joinpath(filepath, "kolmogorovflow.jld2")
+filename_diags = joinpath(filepath, "kolmogorovflow_diags.jld2")
 
 filename = FourierFlows.uniquepath(filename)
 @info "Output will be saved at $filename."
@@ -184,7 +132,6 @@ savediagnostic(E, "energy", filename_diags)
 savediagnostic(Z2, "enstrophyL2", filename_diags)
 savediagnostic(Z4, "enstrophyL4", filename_diags)
 savediagnostic(P, "palinstrophy", filename_diags)
-savediagnostic(psixy00, "psixy00", filename_diags)
 
 @info "Run visualize_simulation.jl after prescribing the two filenames used for saving output at the top the visualize_simulation.jl script."
 
