@@ -132,9 +132,9 @@ t_final = file["snapshots/t/$final_iteration"]
 ψh = zeros(Complex{Float64}, (grid.nkr, grid.nl))
 
 @. ζh = ζh_initial
-ζ = irfft(ζh, grid.nx)
+ζ = irfft(deepcopy(ζh), grid.nx)
 @. ψh = @. -grid.invKrsq * ζh
-ψ = irfft(ψh, grid.nx)
+ψ = irfft(deepcopy(ψh), grid.nx)
 
 energyh = @. 1 / 2 * grid.invKrsq * abs2(ζh_initial)
 energy_initial = 1 / (grid.Lx * grid.Ly) * FourierFlows.parsevalsum(energyh, grid)
@@ -158,7 +158,7 @@ global ∂²ψ∂x∂yh = zeros(Complex{Float64}, grid.nkr, grid.nl)
 
 anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   
-  if i%50 == 0
+  if i%25== 0
     estimated_remaining_walltime = (time()-startwalltime)/60 / i * (total_iterations - i)
     log = @sprintf("estimated remaining walltime: %.2f min", estimated_remaining_walltime)
     println(log)
@@ -168,17 +168,16 @@ anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   local tν = ν * k₀^2 * t
   
   local ζh = file["snapshots/zetah/$iteration"] 
-  local ζ = irfft(ζh, grid.nx)
   
   @. ψh = -grid.invKrsq * ζh
     
   hypeh = @. (grid.kr^2 - grid.l^2) * ψh
-  hype = irfft(hypeh, grid.nx)
+  hype = irfft(deepcopy(hypeh), grid.nx)
   hype_00 = hype[Int(grid.nx/2), Int(grid.ny/2)]
 
-  @. ∂²ψ∂x²h = grid.kr^2 * ψh
-  @. ∂²ψ∂y²h = grid.l * ψh
-  @. ∂²ψ∂x∂yh = grid.kr * grid.l * ψh
+  @. ∂²ψ∂x²h = -grid.kr^2 * ψh
+  @. ∂²ψ∂y²h = -grid.l^2 * ψh
+  @. ∂²ψ∂x∂yh = -grid.kr * grid.l * ψh
   
   local ∂²ψ∂x² = irfft(∂²ψ∂x²h, grid.nx)  
   local ∂²ψ∂y² = irfft(∂²ψ∂y²h, grid.nx)  
@@ -186,11 +185,8 @@ anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
     
   ∂²ψ∂x∂y_00 = ∂²ψ∂x∂y[Int(grid.nx/2), Int(grid.ny/2)]
   
-  max∂²ψ∂x² = maximum(abs.(∂²ψ∂x²))
-  max∂²ψ∂y² = maximum(abs.(∂²ψ∂y²))
-  max∂²ψ∂x∂y = maximum(abs.(∂²ψ∂x∂y))
-  
-  local ψ = irfft(ψh, grid.nx)
+  local ζ = irfft(deepcopy(ζh), grid.nx)
+  local ψ = irfft(deepcopy(ψh), grid.nx)
 
   p[1][1][:z] = ζ'
   p[1][:title] = "vorticity, tν = " * @sprintf("%.4f", tν)
@@ -213,9 +209,9 @@ anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   push!(p[3][4], tν_diags, ΔP)
   push!(p[4][1], tν, ∂²ψ∂x∂y_00)
   push!(p[4][2], tν, hype_00)
-  push!(p[5][1], tν, max∂²ψ∂x²)
-  push!(p[5][2], tν, max∂²ψ∂y²)
-  push!(p[5][3], tν, max∂²ψ∂x∂y)
+  push!(p[5][1], tν, maximum(abs.(∂²ψ∂x²))
+  push!(p[5][2], tν, maximum(abs.(∂²ψ∂y²)))
+  push!(p[5][3], tν, maximum(abs.(∂²ψ∂x∂y)))
 end
 
 gif(anim, moviegif_filename, fps=14)
