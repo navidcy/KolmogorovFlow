@@ -209,7 +209,7 @@ anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   push!(p[3][4], tν_diags, ΔP)
   push!(p[4][1], tν, ∂²ψ∂x∂y_00)
   push!(p[4][2], tν, hype_00)
-  push!(p[5][1], tν, maximum(abs.(∂²ψ∂x²))
+  push!(p[5][1], tν, maximum(abs.(∂²ψ∂x²)))
   push!(p[5][2], tν, maximum(abs.(∂²ψ∂y²)))
   push!(p[5][3], tν, maximum(abs.(∂²ψ∂x∂y)))
 end
