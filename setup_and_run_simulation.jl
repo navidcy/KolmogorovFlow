@@ -22,21 +22,22 @@ dev = CPU()     # Device (CPU/GPU)
 #
 # First, we pick some numerical and physical parameters for our model.
 
-α = 0.9                       # aspect ratio parameter α = Ly / Lx
+α = 0.3                       # aspect ratio parameter α = Ly / Lx
 γ = 1.0                       # forcing amplitude
 
 critical_ν(α, γ) = sqrt((γ * sqrt(1 - α^2)) / (sqrt(2) * (1 + α^2)))
 
-ny, Ly  = 128, 2π             # grid resolution and domain length
-nx, Lx  = 126, Ly / α
+ny, Ly  = 64, 2π             # grid resolution and domain length
+nx, Lx  = 128, Ly / α
 
 ## Then we pick the time-stepper parameters
-    dt = 2e-3  # timestep
+    dt = 5e-3  # timestep
  nsubs = 50    # number of steps between each plot
  
-  ν = critical_ν(α, γ) / 2
+  ν = critical_ν(α, γ) / 10
+
  k₀ = 1
- tfinal = 2.0 / (ν * k₀^2)
+ tfinal = 10.0 / (ν * k₀^2)
  nsteps = Int(round(tfinal / dt))
 
  grid = TwoDGrid(dev, nx, Lx, ny, Ly)
