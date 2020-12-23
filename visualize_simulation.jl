@@ -7,6 +7,8 @@ using FFTW: irfft
 filename = "./data/kolmogorovflow.jld2"
 filename_diags = "./data/kolmogorovflow_diags.jld2"
 
+normalize_diags_with_initial = false
+
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 
 """
@@ -69,7 +71,7 @@ function plot_output(x, y, ζ, ψ, t, k₀, ν, t_final)
                   xlabel = "ν k₀² t",
                    xlims = (0, 1.01 * ν * k₀^2 * t_final),
                    # ylims = (0, 3),
-                  yscale = :log10
+                   # yscale = :log10
                    )
                    
     p_diags2 = plot(2, # this means "a plot with two series"
@@ -188,25 +190,32 @@ anim = @animate for (i, iteration) in enumerate(iterations[1:end-1])
   local ζ = irfft(deepcopy(ζh), grid.nx)
   local ψ = irfft(deepcopy(ψh), grid.nx)
 
-  p[1][1][:z] = ζ'
+  p[1][1][:z] = ζ
   p[1][:title] = "vorticity, tν = " * @sprintf("%.4f", tν)
-  p[2][1][:z] = ψ'
+  p[2][1][:z] = ψ
   p[2][:title] = "streamfunction"
   p[3][:title] = "Re = " * @sprintf("%.2f", Re)
   
   t_diags = diags["diags/energy/t"][(i-1)*nsubs+1:i*nsubs]
   t_diags = diags["diags/energy/t"][(i-1)*nsubs+1:i*nsubs]
   tν_diags = ν * k₀^2 * t_diags
+
+  ΔE  = (diags["diags/energy/data"][(i-1)*nsubs+1:i*nsubs]diags["diags/energy/data"][1]).^(1/2)
+  ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1:i*nsubs]).^(1/2)
+  ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1:i*nsubs]).^(1/4)
+  ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1:i*nsubs]).^(1/2)
   
-  ΔE  = (diags["diags/energy/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/energy/data"][1]).^(1/2)
-  ΔΖ₂ = (diags["diags/enstrophyL2/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/enstrophyL2/data"][1]).^(1/2)
-  ΔΖ₄ = (diags["diags/enstrophyL4/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/enstrophyL4/data"][1]).^(1/4)
-  ΔP  = (diags["diags/palinstrophy/data"][(i-1)*nsubs+1:i*nsubs] / diags["diags/palinstrophy/data"][1]).^(1/2)
+  if normalize_diags_with_initial == true
+    ΔE  /= (diags["diags/palinstrophy/data"][1])^(1/2)
+    ΔΖ₂ /= (diags["diags/enstrophyL2/data"][1])^(1/2)
+    ΔΖ₄ /= (diags["diags/enstrophyL4/data"][1])^(1/4)
+    ΔP  /= (diags["diags/palinstrophy/data"][1])^(1/2)
+  end
   
-  push!(p[3][1], tν_diags, ΔE)
-  push!(p[3][2], tν_diags, ΔΖ₂)
-  push!(p[3][3], tν_diags, ΔΖ₄)
-  push!(p[3][4], tν_diags, ΔP)
+  push!(p[3][1], tν_diags, log10.(ΔE))
+  push!(p[3][2], tν_diags, log10.(ΔΖ₂))
+  push!(p[3][3], tν_diags, log10.(ΔΖ₄))
+  push!(p[3][4], tν_diags, log10.(ΔP))
   push!(p[4][1], tν, ∂²ψ∂x∂y_00)
   push!(p[4][2], tν, hype_00)
   push!(p[5][1], tν, maximum(abs.(∂²ψ∂x²)))
