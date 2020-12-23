@@ -1,7 +1,7 @@
 # ## Problem setup
 # We initialize a `Problem` by providing a set of keyword arguments. The
 # `stepper` keyword defines the time-stepper to be used.
-prob = TwoDNavierStokes.Problem(dev; nx=n, Lx=L, ny=n, Ly=L, ν=ν, dt=dt, stepper="ETDRK4")
+prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, ν=ν, dt=dt, stepper="ETDRK4")
 
 # Next we define some shortcuts for convenience.
 sol, cl, vs, gr = prob.sol, prob.clock, prob.vars, prob.grid
@@ -28,7 +28,7 @@ energy_initial = energy(prob)
 
 U = sqrt(2 * energy_initial)
 
-Re = U * L / ν
+Re = U * Ly / ν
 
 
 # ## Diagnostics

@@ -23,7 +23,10 @@ dev = CPU()     # Device (CPU/GPU)
 #
 # First, we pick some numerical and physical parameters for our model.
 
-n, L  = 256, 2π             # grid resolution and domain length
+α = 0.9                       # aspect ratio parameter α = Ly / Lx
+
+ny, Ly  = 256, 2π             # grid resolution and domain length
+nx, Lx  = 256, Ly / α         # grid resolution and domain length
 
 ## Then we pick the time-stepper parameters
     dt = 1e-2  # timestep
@@ -36,6 +39,6 @@ n, L  = 256, 2π             # grid resolution and domain length
 
 
 # Initial condition (as function)
-initial_vorticity(x, y) = sin(x)*sin(y) + 0.05 * (cos(8x) + cos(8y))
+initial_vorticity(x, y) = sin(α * x) * sin(y) + 0.05 * (cos(α * 8x) + cos(8y))
 
 include("simulation.jl")
