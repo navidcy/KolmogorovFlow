@@ -1,3 +1,5 @@
+using Pkg; Pkg.instantiate()
+
 using JLD2
 using FourierFlows
 using Plots

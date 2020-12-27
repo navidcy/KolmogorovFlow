@@ -2,6 +2,8 @@
 #
 # A simulation of decaying two-dimensional turbulence.
 
+using Pkg; Pkg.instantiate()
+
 using FourierFlows, Printf, Random, JLD2
  
 using Random: seed!
