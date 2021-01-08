@@ -7,7 +7,7 @@ prob = TwoDNavierStokes.Problem(dev; nx=nx, Lx=Lx, ny=ny, Ly=Ly, ν=ν, dt=dt, c
 sol, cl, vs, gr = prob.sol, prob.clock, prob.vars, prob.grid
 x, y = gr.x, gr.y
 
-TwoDNavierStokes.set_zeta!(prob, ζ₀)
+TwoDNavierStokes.set_ζ!(prob, ζ₀)
 
 energy_initial = energy(prob)
 
@@ -24,9 +24,9 @@ Returns the domain-averaged enstrophy, ∫ ζ⁴ dxdy / (Lx Ly), for the solutio
 """
 @inline function vorticityL4(prob)
   sol, vars, grid = prob.sol, prob.vars, prob.grid
-  @. vars.zetah = sol
-  ldiv!(vars.zeta, grid.rfftplan, vars.zetah)
-  return sum(@. vars.zeta^4) * grid.dx * grid.dy / (grid.Lx * grid.Ly)
+  @. vars.ζh = sol
+  ldiv!(vars.ζ, grid.rfftplan, vars.ζh)
+  return sum(@. vars.ζ^4) * grid.dx * grid.dy / (grid.Lx * grid.Ly)
 end
 
 """
