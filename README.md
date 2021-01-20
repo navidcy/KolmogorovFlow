@@ -4,9 +4,7 @@ Study of the stability of Kolmogorov flow. The code is written in [Julia](https:
 
 ## Installation
 
-To install the code first you need to [install Julia](https://julialang.org/downloads/)
-
-Then glone the repository, e.g.,
+To install the code first you need to [install Julia](https://julialang.org/downloads/). Then glone the repository, e.g.,
 
 ```bash
 git clone https://github.com/navidcy/KolmogorovFlow.git
