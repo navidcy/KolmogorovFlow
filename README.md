@@ -4,9 +4,9 @@ Study of the stability of Kolmogorov flow. The code is written in [Julia](https:
 
 ## Installation
 
-To install the code first you need to [install Julia](https://julialang.org/downloads/). Then glone the repository, e.g.,
+First you need to [install Julia](https://julialang.org/downloads/). Then clone the repository, e.g.,
 
-```bash
+```
 git clone https://github.com/navidcy/KolmogorovFlow.git
 ```
 
@@ -18,13 +18,12 @@ mkdir movies data
 
 Then, after you edit `setup_and_run_simulation.jl` file with your parameter values, and while still inside the repository's main directory, you may run a simulation via
 
-```bash
+```
 julia --project setup_and_run_simulation.jl
 ```
 
-To create an animation of the simulation, first edit the `visualize_simulation.jl` or `visualize_movie.jl` scripts to point to the correct `.jld2` output file from the simulation you want to visualize, and then run, e.g.,
+To make an animation of the simulation, first edit the `visualize_simulation.jl` or `visualize_movie.jl` script to point to the correct `.jld2` output files from the simulation you want to visualize, and then run, e.g.,
 
-
-```bash
+```
 julia --project visualize_simulation.jl
 ```
