@@ -1,6 +1,6 @@
 # KolmogorovFlow
 
-Study of the stability of Kolmogorov flow. The code is written in [Julia](https://julialang.org).
+Study of the stability of Kolmogorov flow. The code is written in [Julia](https://julialang.org) and utilizes the Julia package [GeophysicalFlows.jl](http://github.com/FourierFlows/GeophysicalFlows.jl).
 
 ## Installation
 
@@ -27,3 +27,9 @@ To make an animation of the simulation, first edit the `visualize_simulation.jl`
 ```
 julia --project visualize_simulation.jl
 ```
+
+## Cite
+
+You can cite the [GeophysicalFlows.jl](http://github.com/FourierFlows/GeophysicalFlows.jl) package via [zenodo](https://zenodo.org). Please cite as:
+
+> Navid C. Constantinou, Gregory L. Wagner, and co-contributors. (2021). FourierFlows/GeophysicalFlows.jl: GeophysicalFlows v0.11.2  (Version v0.11.2). Zenodo.  [http://doi.org/10.5281/zenodo.1463809](http://doi.org/10.5281/zenodo.1463809)
