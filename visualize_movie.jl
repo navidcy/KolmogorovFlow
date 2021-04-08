@@ -1,3 +1,5 @@
+ENV["GKSwstype"] = "100"
+
 using Pkg; Pkg.instantiate()
 
 using JLD2
@@ -6,7 +8,7 @@ using Plots
 using Printf
 using FFTW: irfft
 
-filename = "./data/kolmogorovflow_7.jld2"
+filename = "./data/kolmogorovflow.jld2"
 
 withoutgif(path) = (length(path)>3 && path[end-3:end] == ".gif") ? path[1:end-4] : path
 

@@ -1,3 +1,5 @@
+ENV["GKSwstype"] = "100"
+
 using Pkg; Pkg.instantiate()
 
 using JLD2
@@ -6,8 +8,8 @@ using Plots
 using Printf
 using FFTW: irfft
 
-filename = "./data/kolmogorovflow_3.jld2"
-filename_diags = "./data/kolmogorovflow_diags_2.jld2"
+filename = "./data/kolmogorovflow.jld2"
+filename_diags = "./data/kolmogorovflow_diags.jld2"
 
 normalize_diags_with_initial = false
 
