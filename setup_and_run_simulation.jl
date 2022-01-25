@@ -45,29 +45,30 @@ nx, Lx  = 128, Ly / α
  tfinal = 10.0 / (ν * k₀^2)
  nsteps = Int(round(tfinal / dt))
 
- grid = TwoDGrid(dev, nx, Lx, ny, Ly)
- x, y = gridpoints(grid)
+grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+x, y = gridpoints(grid)
 
- forcing = @. γ * cos(y)
- forcingh = rfft(forcing)
+forcing = @. γ * cos(y)
+forcingh = rfft(forcing)
+
+k_rescaled = grid.kr * Lx/(2*pi)
+l_rescaled = grid.l * Ly/(2*pi)
+Ksquared_rescaled = @. k_rescaled^2 + l_rescaled^2
 
 if add_stochastic_forcing == true
-  K = @. sqrt(grid.Krsq)             # a 2D array with the total wavenumber
-
-  forcing_spectrum = 0*grid.Krsq
-
-  forcing_spectrum[grid.Krsq .== 1.0] .= 1
-  forcing_spectrum[grid.Krsq .== 4.0] .= 1
+  forcing_spectrum = 0*Ksquared_rescaled 
+  forcing_spectrum[Ksquared_rescaled .== 1.0] .= 1 
+  forcing_spectrum[Ksquared_rescaled .== 4.0] .= 1 
+  forcing_spectrum[Ksquared_rescaled .== 0] .= 0 # ensure forcing has zero domain-average
   
-  forcing_spectrum[grid.Krsq .== 0] .= 0 # ensure forcing has zero domain-average
-
   ε0 = FourierFlows.parsevalsum(forcing_spectrum .* grid.invKrsq / 2, grid) / (grid.Lx * grid.Ly)
   @. forcing_spectrum *= ε/ε0        # normalize forcing to inject energy at rate ε
 
   random_uniform = dev==CPU() ? rand : CUDA.rand
 
   function calcF!(Fh, sol, t, clock, vars, params, grid)
-    Fh .= forcingh .+ sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
+    #Fh .= forcingh .+ sqrt.(forcing_spectrum) .* exp.(2π * im * random_uniform(eltype(grid), size(sol))) ./ sqrt(clock.dt)
+	   Fh .= forcingh .+ sqrt.(forcing_spectrum) .* (randn(size(sol)) + im*randn(size(sol))) ./ sqrt(2clock.dt)
     return nothing
   end
 else
